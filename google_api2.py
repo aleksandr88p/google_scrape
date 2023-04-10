@@ -5,87 +5,94 @@ from bs4 import BeautifulSoup
 import datetime
 import random
 from requests.exceptions import ProxyError, HTTPError
-from httpx import AsyncClient
-import json
-from httpx import AsyncHTTPTransport, URL, AsyncClient, Proxy
-import httpx
-import asyncio
+from fastapi.middleware.cors import CORSMiddleware
+# Подрубаешь модуль мой
+from mod_req import AsyncReq
 
 """
 pip install fastapi uvicorn
 
 uvicorn OLD_api:app --reload  local
 
-uvicorn asyncApi:app --host 185.51.121.22 --port 8000  on server
+uvicorn api_google2:app --host 185.51.121.22 --port 8000  on server
 
 """
-
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 successful_requests = 0
 
 
-class MyAPI:
+class MyAPI(AsyncReq):
     def __init__(self):
-        pass
+        super().__init__()
+        self.headers = {
+            'authority': 'www.google.com',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
+
+            'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+            # 'user-agent': f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.{random.randint(0, 9999)} Safari/537.{random.randint(0, 99)}',
+        }
+
+        self.base_url = 'https://www.google.com'
 
     async def make_request(self, keyword: str, country: str) -> str:
-        print(keyword, country)
-        proxy_url = URL('http://83.149.70.159:13012')
-        # transport = AsyncHTTPTransport(proxy=httpx.Proxy(url=proxy_url))
-        transport = AsyncHTTPTransport(proxy=httpx.Proxy(url=str(proxy_url)))
-        async with AsyncClient(transport=transport) as client:
-            # async with AsyncClient() as client:
+        try:
 
-            cookies = {}
-            headers = {
-                'authority': 'www.google.com',
-                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'cache-control': 'max-age=0',
-                'dnt': '1',
-                'sec-ch-ua': '"Chromium";v="110", "Not A(Brand";v="24", "Google Chrome";v="110"',
-                'sec-ch-ua-arch': '"x86"',
-                'sec-ch-ua-bitness': '"64"',
-                # 'sec-ch-ua-full-version': '"110.0.5481.100"',
-                # 'sec-ch-ua-full-version-list': '"Chromium";v="110.0.5481.100", "Not A(Brand";v="24.0.0.0", "Google Chrome";v="110.0.5481.100"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-model': '""',
-                # 'sec-ch-ua-platform': '"Linux"',
-                # 'sec-ch-ua-platform-version': '"5.19.0"',
-                'sec-ch-ua-wow64': '?0',
-                'sec-fetch-dest': 'document',
-                'sec-fetch-mode': 'navigate',
-                'sec-fetch-site': 'same-origin',
-                'sec-fetch-user': '?1',
-                'upgrade-insecure-requests': '1',
-                # 'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
-                'user-agent': f'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.{random.randint(0, 9999)} Safari/537.{random.randint(0, 99)}',
-            }
-
+            proxies = 'http://83.149.70.159:13012'
+            # proxies = 'http://astroproxy4014:50bd57@51.89.94.97:11079'
             params = {
-                'q': f'{keyword}',
+                'q': keyword,
                 # 'uule': 'w CAIQICINVW5pdGVkIFN0YXRlcw',
-                'gl': f'{country}',  # geographic location gl=us USA gl=uk Great Britain
+                'gl': 'us',  # geographic location gl=us USA gl=uk Great Britain
                 'hl': 'en',  # language interface hl=en hl=ru
                 # 'lr': 'lang_en' # Search language
             }
+            resp = await self.return_responses(url=f"{self.base_url}/search", params=params,
+                                               headers=self.headers, proxies=proxies)
+            if resp is None:
+                # raise BadProxies
+                print('None .... BadProxies')
+                return await self.make_request(keyword=keyword, country=country)
 
-            while True:
-                try:
-                    await asyncio.sleep(1)
-                    response = await client.get('https://www.google.com/search', params=params, cookies=cookies,
-                                                headers=headers, timeout=(10, 10))
+            if 'consent.google.com' in resp.real_url:
+                # raise BadResponse
+                print('consent.google.com')
+                return await self.make_request(keyword=keyword, country=country)
+            elif resp.status in [200]:
+                # Делаешь что нужно
+                print(200)
+                return resp.text
 
-                    response.raise_for_status()  # Проверка на HTTP ошибки
+            elif resp.status in [401]:
+                print('[401] .... BadProxies')
+                return await self.make_request(keyword=keyword, country=country)
 
-                    return response.text
-                    await asyncio.sleep(0.1)
+            elif resp.status in [409]:
+                print('[409] .... BadProxies')
+                return await self.make_request(keyword=keyword, country=country)
+            else:
+                print(f'else .... BadProxies {resp.status} |')
+                return await self.make_request(keyword=keyword, country=country)
+        except Exception as e:
+            return await self.make_request(keyword=keyword, country=country)
 
-                except Exception as ex:
-                    print(ex)
-                    return await self.make_request(keyword=keyword, country=country)
-
+    #####################
+    # search parameters #
+    #####################
     def searching_parameters(self, soup):
+        '''
+        searching  parametrs(keyword, language, location
+        :param soup:
+        :return:
+        '''
         try:
             # search_box = soup.select_one('input[name="q"]')
             search_box = soup.find(attrs={'name': 'q'})
@@ -98,11 +105,18 @@ class MyAPI:
         except Exception as e:
             print(f'error in searching parameters {e}')
 
+    #############################################################
+    # search information (search_tabs(news, images, videos, etc #
+    #############################################################
     def searching_information(self, soup):
+        '''
+        searching info in google result(num of res and time
+        :param soup:
+        :return:
+        '''
         try:
             google_page = 'https://google.com'
             search_info_box_raw = soup.find('div', attrs={"role": "navigation"}).find_all('a')
-            # search_info_box = search_info_box_raw.find_all('a')
             search_navigator_box = []
             for num, oneA in enumerate(search_info_box_raw):
                 to_list = [num + 1, oneA.text, oneA['href']]
@@ -111,16 +125,19 @@ class MyAPI:
                 search_navigator_box.append(to_list)
             results = soup.find('div', attrs={'id': 'result-stats'}).find('nobr').previous_sibling
             time_taken = soup.find('div', attrs={'id': 'result-stats'}).find('nobr').text.strip()
-            # print(search_navigator_box)
-            # print(results.text)
-            # print(time_taken)
             return {"searching_info": {'navigator_box': search_navigator_box, 'total_results': results.text,
                                        'time_taken_displayed': time_taken}}
         except Exception as e:
             print(f'error in searching information {e}')
 
+    #################
+    # inline tweets #
+    #################
     def scrolling_carousel(self, soup):
-
+        '''
+        if twitter cards in google serp
+        :return:
+        '''
         all_cards = soup.find_all('g-inner-card')
         if all_cards:
             all_tweets = []
@@ -141,9 +158,7 @@ class MyAPI:
                     all_tweets.append(
                         {'tweet_date': tweet_date, 'now_utc': now_utc, 'snippet': snippet.text, 'link': link,
                          'status_link': status_link})
-                    # all_tweets.append([tweet_date, now_utc, snippet.text, link, status_link])
                 except Exception as e:
-                    # print(f'error in one tweet {card} {e}')
                     pass
             tweet_dict = {}
             try:
@@ -154,6 +169,9 @@ class MyAPI:
 
             return {'inline_tweets': tweet_dict}
 
+    ###############
+    # top stories #
+    ###############
     def searching_top_stories(self, soup):
         all_stories = soup.find_all('a', attrs={'class': 'WlydOe'})
         top_stories = {}
@@ -167,8 +185,10 @@ class MyAPI:
 
         return {'top_stories': top_stories}
 
+    ###################
+    # organic results #
+    ###################
     def searching_organic(self, soup):
-        # all_organic = soup.select('div.g')
         organic_list = []
         organic_dict = {}
         all_organic = soup.find_all('div', class_='g')
@@ -177,7 +197,6 @@ class MyAPI:
             try:
                 link = item.find('a')['href']
                 head = item.find('h3').text
-                # print(head)
                 # VwiC3b yXK7lf MUxGbd yDYNvb lyLwlc lEBKkf
                 try:
                     snippet = item.find('div', class_='VwiC3b').text
@@ -190,6 +209,11 @@ class MyAPI:
         return {'organic_results': organic_dict}
 
     def searching_knowledge(self, soup):
+        """
+        looking for a knowlege in serp Google
+        :param soup:
+        :return:
+        """
         knowl_dict = {}
         if soup.find(class_='kp-wholepage'):
 
@@ -212,6 +236,7 @@ class MyAPI:
 
                 for item in table_data:
                     name = item.find(attrs={'class': 'w8qArf'}).text
+                    # print(f'name = {name}')
 
                     values_in_item = item.find_all(attrs={'class': 'LrzXr kno-fv wHYlTd z8gr9e'})
                     for i in values_in_item:
@@ -236,6 +261,11 @@ class MyAPI:
                 knowl_dict = {}
 
     def searching_sponsored(self, soup):
+        """
+
+        :param soup:
+        :return:
+        """
         all_sponsored = soup.find_all(attrs={"class": "uEierd"})
         for sponsor in all_sponsored:
             print(sponsor.text)
@@ -290,7 +320,7 @@ class MyAPI:
             return video_dict
 
     async def make_json(self, content):
-        soup = BeautifulSoup(content, 'html.parser')
+        soup = BeautifulSoup(content, 'lxml')
         to_json = {}
         to_json['params'] = self.searching_parameters(soup)
         to_json['info'] = self.searching_information(soup)
@@ -302,3 +332,29 @@ class MyAPI:
         to_json['videos'] = self.searching_video(soup)
 
         return to_json
+
+
+my_api = MyAPI()
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello to google scraper"}
+
+
+@app.get("/process_string/{keyword}/{country}")
+async def process_string(keyword: str, country: str):
+    global successful_requests
+    while True:
+        content = await my_api.make_request(keyword, country)
+        result_json = await my_api.make_json(content)
+        if result_json.get('params'):
+            successful_requests += 1
+            return result_json
+
+
+@app.get("/stats")
+async def stats():
+    global successful_requests
+
+    return {"successful_requests": successful_requests}
