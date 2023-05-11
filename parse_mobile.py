@@ -4,9 +4,12 @@ from bs4 import BeautifulSoup
 import datetime
 from urllib.parse import urlparse
 import json
-class DekstopScrape:
-    def __int__(self):
-        pass
+
+
+class MobileScrape:
+
+    def __init__(self):
+        self.gen_link = 'https://www.google.com'
 
     #####################
     # search parameters #
@@ -28,6 +31,39 @@ class DekstopScrape:
             return {'searching_parameters': {'search_query': search_query, 'location': location, 'language': language}}
         except Exception as e:
             print(f'error in searching parameters {e}')
+
+
+    ##############
+    # also search#
+    ##############
+    def also_search(self, soup):
+
+        # all_items = soup.find('div', attrs={'class': 'ouy7Mc'}).find_all('div', attrs={'jsname': 'Cpkphb'})
+        all_items = soup.find_all('div', attrs={'class': 'ouy7Mc'})
+        for item in all_items:
+            if item.find_all('div', attrs={'jsname': 'Cpkphb'}):
+                all_search = item.find_all('div', attrs={'jsname': 'Cpkphb'})
+            # if item.find_all('div', attrs={'jsname': 'yEVEwb'}):
+            #     all_quest = item.find_all('div', attrs={'jsname': 'yEVEwb'})
+        also_search_list = []
+        try:
+            for item in all_search:
+                query = item.text.strip()
+                link_raw = item.find('a')['href']
+                link = f"{self.gen_link}{link_raw}"
+                also_search_list.append({'query': query, 'link': link})
+        except Exception as e:
+            print(f'error in also search in mobile vers\n{e}')
+        return also_search_list
+
+
+    ############
+    # also ask #
+    ############
+
+    # def also_ask(self, soup):
+
+
 
     #############################################################
     # search information (search_tabs(news, images, videos, etc #
@@ -117,12 +153,12 @@ class DekstopScrape:
     def searching_organic(self, soup):
         organic_list = []
         # Ww4FFb vt6azd g
-        all_organic = soup.find_all('div', class_='g')
+        all_organic = soup.find_all('div', class_='kvH3mc BToiNc UK95Uc')
         c = 0
         for num, item in enumerate(all_organic):
             try:
                 link = item.find('a')['href']
-                head = item.find('h3').text
+                head = item.find('div', attrs={'class': 'oewGkc LeUQr MUxGbd v0nnCb'}).text
                 head = ' '.join(head.strip().split())
                 # VwiC3b yXK7lf MUxGbd yDYNvb lyLwlc lEBKkf
                 try:
@@ -270,17 +306,17 @@ class DekstopScrape:
         return image_list
 
     def searching_video(self, soup):
-        if soup.find_all(attrs={'class': 'RzdJxc'}):
-            all_vids = soup.find_all(class_='RzdJxc')
+        if soup.find_all(attrs={'class': 'BycXVc'}):
+            all_vids = soup.find_all(class_='BycXVc')
             video_list = []
             for num, video in enumerate(all_vids):
                 try:
                     position = num + 1
-                    a_tag = video.find_all(class_='X5OiLe')
-                    title = a_tag[-1].find(class_='cHaqb').text
+                    a_tag = video.find_all('a')
+                    title = a_tag[-1].find(class_='WDJH5').text
                     link = a_tag[-1]['href']
-                    source = a_tag[-1].find(class_='pcJO7e').text
-                    date = a_tag[-1].find(class_='hMJ0yc').text
+                    source = a_tag[-1].find(class_='PUDiTd o5sVue OSrXXb').text
+                    date = a_tag[-1].find(class_='o5sVue OSrXXb').text
                     video_list.append({'title': title, 'link': link, 'source': source, 'date': date})
                 except Exception as e:
                     print(f'error occured in videos {e}')
@@ -290,7 +326,7 @@ class DekstopScrape:
         soup = BeautifulSoup(content, 'lxml')
         to_json = {}
         to_json['params'] = self.searching_parameters(soup)
-        to_json['info'] = self.searching_information(soup)
+        # to_json['info'] = self.searching_information(soup)
         to_json['organic'] = self.searching_organic(soup)
         to_json['top_stories'] = self.searching_top_stories(soup)
         to_json['inline_tweets'] = self.scrolling_carousel(soup)
@@ -299,15 +335,17 @@ class DekstopScrape:
         to_json['videos'] = self.searching_video(soup)
         to_json['images'] = self.searching_images(soup)
         to_json['ads'] = self.searching_sponsored(soup)
+        to_json['also_search'] = self.also_search(soup)
         # my_json = json.dumps(to_json, indent=4, ensure_ascii=False)
         return to_json
 
 
 
-# scrap = DekstopScrape()
-#
-# with open('pizza_picture.html', 'r') as f:
+scrap = MobileScrape()
+
+# with open('../OLD/google_searchOLD/for_api_test/last_of_us_mob.html', 'r') as f:
 #     cont = f.read()
-# d = asyncio.run(scrap.make_json(cont))
 #
-# print(json.dumps(d, indent=4))
+# d = asyncio.run(scrap.make_json(cont))
+# # print(scrap.gen_link)
+# print(json.dumps(d,indent=4))
