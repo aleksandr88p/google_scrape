@@ -81,12 +81,12 @@ class MyAPI(AsyncReq):
             if resp is None:
                 # raise BadProxies
                 print('None .... BadProxies')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
 
             if 'consent.google.com' in resp.real_url:
                 # raise BadResponse
                 print('consent.google.com')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
             elif resp.status in [200]:
                 # Делаешь что нужно
                 print(200)
@@ -94,16 +94,16 @@ class MyAPI(AsyncReq):
 
             elif resp.status in [401]:
                 print('[401] .... BadProxies')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
 
             elif resp.status in [409]:
                 print('[409] .... BadProxies')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
             else:
                 print(f'else .... BadProxies {resp.status} |')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
         except Exception as e:
-            return await self.make_request(keyword=keyword, country=country)
+            return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
 
 
 
