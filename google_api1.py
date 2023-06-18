@@ -17,7 +17,8 @@ pip install fastapi uvicorn
 
 uvicorn OLD_api:app --reload  local
 uvicorn google_api1:app --reload  
-uvicorn api_google2:app --host 185.51.121.22 --port 8000  on server
+uvicorn google_api1:app --host 185.51.121.22 --port 8000  on server
+uvicorn google_api1:app --host 185.51.121.22 --port 8000
 
 """
 app = FastAPI()
@@ -73,20 +74,20 @@ class MyAPI(AsyncReq):
 
             if req_type.startswith('m') or req_type.startswith('M'):
                 resp = await self.return_responses(url=f"{self.base_url}/search", params=params,
-                                                   headers=self.mobile_heders)
+                                                   headers=self.mobile_heders, proxies=proxies)
             else:
                 resp = await self.return_responses(url=f"{self.base_url}/search", params=params,
-                                                   headers=self.dekstop_headers)
+                                                   headers=self.dekstop_headers, proxies=proxies)
             print(resp.real_url)
             if resp is None:
                 # raise BadProxies
                 print('None .... BadProxies')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
 
             if 'consent.google.com' in resp.real_url:
                 # raise BadResponse
                 print('consent.google.com')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
             elif resp.status in [200]:
                 # Делаешь что нужно
                 print(200)
@@ -94,16 +95,16 @@ class MyAPI(AsyncReq):
 
             elif resp.status in [401]:
                 print('[401] .... BadProxies')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
 
             elif resp.status in [409]:
                 print('[409] .... BadProxies')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
             else:
                 print(f'else .... BadProxies {resp.status} |')
-                return await self.make_request(keyword=keyword, country=country)
+                return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
         except Exception as e:
-            return await self.make_request(keyword=keyword, country=country)
+            return await self.make_request(keyword=keyword, full_location=full_location, country=country, req_type=req_type)
 
 
 
