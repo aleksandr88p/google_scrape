@@ -59,8 +59,8 @@ class MyAPI(AsyncReq):
         uule = "w+CAIQICI" + chr(len(full_location)) + city_name_base64
 
         try:
-            # proxies = 'http://83.149.70.159:13012' # On SERVER
-            proxies = None # on local
+            proxies = 'http://83.149.70.159:13012' # On SERVER
+            # proxies = None # on local
             # proxies = 'http://astroproxy4014:50bd57@51.89.94.97:11079'
             params = {
                 'q': keyword,
