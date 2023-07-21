@@ -2,6 +2,7 @@ import json
 from parse_dekstop import DekstopScrape
 from parse_mobile import MobileScrape
 from fastapi import FastAPI
+from fastapi import Query
 from concurrent.futures import ThreadPoolExecutor
 import requests
 from bs4 import BeautifulSoup
@@ -9,9 +10,10 @@ import datetime
 import random
 from requests.exceptions import ProxyError, HTTPError
 from fastapi.middleware.cors import CORSMiddleware
-# Подрубаешь модуль мой
+from interaction_with_db import get_all_users, change_available_request_value, get_specific_user
 from mod_req import AsyncReq
 import base64
+
 """
 pip install fastapi uvicorn
 
@@ -59,8 +61,8 @@ class MyAPI(AsyncReq):
         uule = "w+CAIQICI" + chr(len(full_location)) + city_name_base64
 
         try:
-            proxies = 'http://83.149.70.159:13012' # On SERVER
-            # proxies = None # on local
+            # proxies = 'http://83.149.70.159:13012' # On SERVER
+            proxies = None # on local
             # proxies = 'http://astroproxy4014:50bd57@51.89.94.97:11079'
             params = {
                 'q': keyword,
@@ -121,22 +123,42 @@ async def root():
 
 
 @app.get("/process_string/{keyword}/{full_location}/{country}/{req_type}")
-async def process_string(keyword: str, full_location: str, country: str, req_type: str):
+async def process_string(
+        keyword: str,
+        full_location: str,
+        country: str,
+        req_type: str,
+        token: str = Query(...),
+        email: str = Query(...)
+        ):
     global successful_requests
-    while True:
-        content = await my_api.make_request(keyword, full_location, country, req_type)
-        # with open('first.html', 'a') as f:
-        #     f.write(content)
-        if req_type.startswith('m') or req_type.startswith('M'):
-            result_json = await mobile_scrapper.make_json(content)
-        else:
-            result_json = await dekstop_scrapper.make_json(content)
-        if result_json.get('params'):
-            successful_requests += 1
-            # my_json = json.dumps(result_json, indent=4, ensure_ascii=False)
-            # return my_json
-            return result_json
-            # return json.loads(result_json, ensure_ascii=False)
+    specific_user = get_specific_user(email)
+    if len(specific_user) > 0:
+        # print(specific_user[0]['user_email'])
+
+        if not token == specific_user[0]['unique_token']:
+            return {"Token": "token error"}
+        if int(specific_user[0]['available_requests']) < 1:
+            return {"available_requests": "not enough available_requests"}
+
+
+        while True:
+            content = await my_api.make_request(keyword, full_location, country, req_type)
+            # print(content)
+            # with open('first.html', 'a') as f:
+            #     f.write(content)
+            if req_type.startswith('m') or req_type.startswith('M'):
+                result_json = await mobile_scrapper.make_json(content)
+            else:
+                result_json = await dekstop_scrapper.make_json(content)
+            if result_json.get('params'):
+                successful_requests += 1
+                # my_json = json.dumps(result_json, indent=4, ensure_ascii=False)
+                # return my_json
+                return result_json
+                # return json.loads(result_json, ensure_ascii=False)
+    else:
+        return {"email": "Not correct email or There is no user with such credentials in the database."}
 
 @app.get("/stats")
 async def stats():
