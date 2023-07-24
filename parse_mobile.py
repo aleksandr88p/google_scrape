@@ -16,7 +16,7 @@ class MobileScrape:
     #####################
     def searching_parameters(self, soup):
         '''
-        searching  parametrs(keyword, language, location
+        searching  parametrs(keyword, language, device
         :param soup:
         :return:
         '''
@@ -24,11 +24,11 @@ class MobileScrape:
             # search_box = soup.select_one('input[name="q"]')
             search_box = soup.find(attrs={'name': 'q'})
             search_query = search_box['value']
-            location_box = soup.select_one('input[name="gl"]')
-            location = location_box['value']
+            device_box = soup.select_one('input[name="gl"]')
+            device = device_box['value']
             language_box = soup.select_one('input[name="hl"]')
             language = language_box['value']
-            return {'searching_parameters': {'search_query': search_query, 'location': location, 'language': language}}
+            return {'searching_parameters': {'search_query': search_query, 'device': device, 'language': language}}
         except Exception as e:
             print(f'error in searching parameters {e}')
 

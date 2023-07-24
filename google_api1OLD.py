@@ -1,6 +1,4 @@
 import json
-import time
-
 from parse_dekstop import DekstopScrape
 from parse_mobile import MobileScrape
 from fastapi import FastAPI
@@ -11,7 +9,6 @@ from bs4 import BeautifulSoup
 import datetime
 import random
 from requests.exceptions import ProxyError, HTTPError
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from interaction_with_db import get_all_users, change_available_request_value, get_specific_user
 from mod_req import AsyncReq
@@ -26,13 +23,6 @@ uvicorn google_api1:app --host 185.51.121.22 --port 8000  on server
 uvicorn google_api1:app --host 185.51.121.22 --port 8000
 
 """
-
-class InvalidDeviceError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
-
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -40,7 +30,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-) 
+)
 
 successful_requests = 0
 
@@ -68,7 +58,6 @@ class MyAPI(AsyncReq):
     async def make_request(self, keyword: str, location: str, country: str, device: str) -> str:
 
         device = device.lower()
-        print(device)
         city_name_base64 = base64.b64encode(location.encode('utf-8')).decode('utf-8')
         uule = "w+CAIQICI" + chr(len(location)) + city_name_base64
 
@@ -87,15 +76,15 @@ class MyAPI(AsyncReq):
             # resp = await self.return_responses(url=f"{self.base_url}/search", params=params,
             #                                    headers=self.headers, proxies=proxies)
 
-            if device == 'mobile':
-                print('use mobile')
+            if device not in ["mobile", "desktop"]:
+                return {"device error": "input mobile or desktop"}
+            if device.startswith('m') or device.startswith('M'):
                 resp = await self.return_responses(url=f"{self.base_url}/search", params=params,
                                                    headers=self.mobile_heders, proxies=proxies)
-            elif device == "desktop":
-                print('use dekstop')
+            else:
                 resp = await self.return_responses(url=f"{self.base_url}/search", params=params,
                                                    headers=self.dekstop_headers, proxies=proxies)
-
+            print(resp.real_url)
             if resp is None:
                 # raise BadProxies
                 print('None .... BadProxies')
@@ -120,7 +109,6 @@ class MyAPI(AsyncReq):
             else:
                 print(f'else .... BadProxies {resp.status} |')
                 return await self.make_request(keyword=keyword, location=location, country=country, device=device)
-
         except Exception as e:
             return await self.make_request(keyword=keyword, location=location, country=country, device=device)
 
@@ -147,13 +135,6 @@ async def process_string(
         email: str = Query(...)
         ):
     global successful_requests
-
-    # Проверяем значение device здесь в функции process_string
-    if device.lower() not in ['mobile', 'desktop']:
-        error_message = "Invalid value for 'device'. Use 'mobile' or 'desktop'."
-        return JSONResponse(content={"error": error_message}, status_code=400)
-
-
     specific_user = get_specific_user(email)
     if len(specific_user) > 0:
         # print(specific_user[0]['user_email'])
@@ -167,7 +148,9 @@ async def process_string(
         print(f"token {specific_user[0]['unique_token']}, reqs {available_reqs}")
         while True:
             content = await my_api.make_request(keyword, location, country, device)
-
+            # print(content)
+            # with open('first.html', 'a') as f:
+            #     f.write(content)
             if device.startswith('m') or device.startswith('M'):
                 result_json = await mobile_scrapper.make_json(content)
             else:

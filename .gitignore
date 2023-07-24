@@ -5,7 +5,7 @@ __pycache__
 *.pyd
 .venv/
 venv/
-locations.csv
+devices.csv
 # Environment variables
 .env
 .venv

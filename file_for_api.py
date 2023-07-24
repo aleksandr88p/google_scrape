@@ -65,7 +65,7 @@ class MyAPI:
             params = {
                 'q': f'{keyword}',
                 # 'uule': 'w CAIQICINVW5pdGVkIFN0YXRlcw',
-                'gl': f'{country}',  # geographic location gl=us USA gl=uk Great Britain
+                'gl': f'{country}',  # geographic device gl=us USA gl=uk Great Britain
                 'hl': 'en',  # language interface hl=en hl=ru
                 # 'lr': 'lang_en' # Search language
             }
@@ -90,11 +90,11 @@ class MyAPI:
             # search_box = soup.select_one('input[name="q"]')
             search_box = soup.find(attrs={'name': 'q'})
             search_query = search_box['value']
-            location_box = soup.select_one('input[name="gl"]')
-            location = location_box['value']
+            device_box = soup.select_one('input[name="gl"]')
+            device = device_box['value']
             language_box = soup.select_one('input[name="hl"]')
             language = language_box['value']
-            return {'searching_parameters': {'search_query': search_query, 'location': location, 'language': language}}
+            return {'searching_parameters': {'search_query': search_query, 'device': device, 'language': language}}
         except Exception as e:
             print(f'error in searching parameters {e}')
 

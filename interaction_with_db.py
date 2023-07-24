@@ -21,17 +21,17 @@ def get_specific_user(email) -> dict:
     return specific_user
 
 
-# def change_available_request_value(email: str, new_value: str):
-#     change_url = f'{BASE_URL}/change_available_request?column_param1={email}&available_request={new_value}'
-#     requests.put(change_url, headers=HEADERS).json()
-
 def change_available_request_value(email: str, new_value: str):
-    change_url = f'{BASE_URL}/change_available_request?column_param1={email}&available_request={new_value}'
-    response = requests.put(change_url, headers=HEADERS)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        print(f"Error: {response.status_code} - {response.text}")
+    change_url = f'{BASE_URL}/change_available_requests?column_param1={email}&available_requests={new_value}'
+    requests.put(change_url, headers=HEADERS).json()
+
+# def change_available_request_value(email: str, new_value: str):
+#     change_url = f'{BASE_URL}/change_available_requests?column_param1={email}&available_requests={new_value}'
+#     response = requests.put(change_url, headers=HEADERS)
+#     if response.status_code == 200:
+#         return response.json()
+#     else:
+#         print(f"Error: {response.status_code} - {response.text}")
 
 
 # all_users = get_all_users()
@@ -45,14 +45,14 @@ def change_available_request_value(email: str, new_value: str):
 #     print(unique_token)
 # print('**********************')
 # specific_user = get_specific_user(EXAMPLE_EMAIL)
-specific_user = get_specific_user('gebamo5450@camplvad.com')
-print('printing specific_user')
-print(specific_user)
+# specific_user = get_specific_user('gebamo5450@camplvad.com')
+# print('printing specific_user')
+# print(specific_user)
 
 """
 printing specific_user
 [{'submission_id': '8', 'user_email': 'homarak409@msback.com', 'submitted_on': '2023-07-14 06:14:18', 'unique_token': '116893152586096', 'available_requests': '998', 'last_reset_date': '2023-07-19 00:45:16'}]
 
 """
-print('change available_request value for specific user')
-change_available_request_value(EXAMPLE_EMAIL, '999')
+# print('change available_request value for specific user')
+# change_available_request_value(EXAMPLE_EMAIL, '1110')

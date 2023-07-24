@@ -12,7 +12,7 @@ config = {
 #
 #
 # create_table_query = """
-# CREATE TABLE Locations (
+# CREATE TABLE devices (
 #     CriteriaID INT,
 #     Name VARCHAR(255),
 #     CanonicalName TEXT,
@@ -40,7 +40,7 @@ config = {
 # try:
 #     with connect(**config) as connection:
 #         with connection.cursor() as cursor:
-#             with open('locations.csv', 'r') as file:
+#             with open('devices.csv', 'r') as file:
 #                 csv_reader = csv.reader(file)
 #                 next(csv_reader)  # Пропускаем заголовок
 #                 c = 0
@@ -49,7 +49,7 @@ config = {
 #                     c += 1
 #                     processed_row = process_row(row)
 #                     cursor.execute("""
-#                         INSERT INTO Locations
+#                         INSERT INTO devices
 #                         (CriteriaID, Name, CanonicalName, ParentID, CountryCode,
 #                         TargetType, Status, CountryName, GoogleDomain, Gl, Hl)
 #                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
